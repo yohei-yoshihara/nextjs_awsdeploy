@@ -1,0 +1,40 @@
+name: Build and Deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: |
+          cd /home/runner/nextjs_awsdeploy
+          npm install
+
+      - name: Build
+        run: |
+          cd /home/runner/nextjs_awsdeploy
+          npm run build
+
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          cd /home/ec2-user/nextjs_awsdeploy
+          echo "$PRIVATE_KEY" > private_key
+          chmod 400 private_key
+          scp -o StrictHostKeyChecking=no -i private_key -r ./.next $USER@$HOST:/home/ec2-user/nextjs_awsdeploy/.next   // scpコマンドでEC2にoutディレクトリの中身をコピーしてる
+          rm -f private_key
