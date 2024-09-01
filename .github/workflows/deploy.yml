@@ -19,12 +19,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd /home/runner/nextjs_awsdeploy
+          cd /home/runner/work/nextjs_awsdeploy/nextjs_awsdeploy
           npm install
 
       - name: Build
         run: |
-          cd /home/runner/nextjs_awsdeploy
+          cd /home/runner/work/nextjs_awsdeploy/nextjs_awsdeploy
           npm run build
 
       - name: Deploy to EC2
@@ -33,8 +33,10 @@ jobs:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
         run: |
-          cd /home/ec2-user/nextjs_awsdeploy
+          cd /home/runner/work/nextjs_awsdeploy/nextjs_awsdeploy
           echo "$PRIVATE_KEY" > private_key
           chmod 400 private_key
-          scp -o StrictHostKeyChecking=no -i private_key -r ./.next $USER@$HOST:/home/ec2-user/nextjs_awsdeploy/.next   // scpコマンドでEC2にoutディレクトリの中身をコピーしてる
+          ssh -oStrictHostKeyChecking=no -i private_key $USER@$HOST "rm -rf nextjs_awsdeploy/.next"  
+          scp -oStrictHostKeyChecking=no -i private_key -r .next $USER@$HOST:nextjs_awsdeploy/.next
+          ssh -oStrictHostKeyChecking=no -i private_key $USER@$HOST "cd nextjs_awsdeploy; pm2 restart app"  
           rm -f private_key
