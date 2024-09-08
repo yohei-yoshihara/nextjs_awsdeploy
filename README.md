@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.JSのAWS EC2への配備
 
-## Getting Started
+## EC2インスタンスの作成
 
-First, run the development server:
+AMIとしてAmazon Linux 2023を選択して、インスタンスを作成する。
+HTTPポートが通過できるように設定する。SSHでログインして、パッケージを更新する。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+``` bash
+sudo yum update -y
+sudo yum upgrade -y
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Node.jsのインストール
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Node.jsの20.xをインストールする。
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+``` bash
+curl -sL https://rpm.nodesource.com/setup_20.x | sudo -E bash -
+sudo yum install -y nodejs
+node —version
+npm —version
+```
 
-## Learn More
+## gitのインストール 
 
-To learn more about Next.js, take a look at the following resources:
+``` bash
+sudo yum -y install git
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## pm2のインストール
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+``` bash
+sudo npm install pm2 -g
+```
 
-## Deploy on Vercel
+ブート時にpm2が起動するようにsystemdに登録する。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+``` bash
+cd nextjs_awsdeploy
+pm2 start npm --name nextjs-apps -- run start -- -p 3000
+pm2 list nextjs-apps
+pm2 save
+pm2 startup
+sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u ec2-user --hp /home/ec2-user
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Nginxのインストール
+
+``` bash
+sudo yum install -y nginx
+```
+
+リバースプロキシを設定する。
+
+``` bash
+sudo vim /etc/nginx/conf.d/nextjs-app.conf
+```
+
+```
+server {
+   listen 80;
+   server_name your-domain.com;
+   location / {
+     proxy_pass http://localhost:3000;
+   }
+}
+```
