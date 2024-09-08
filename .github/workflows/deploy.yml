@@ -38,5 +38,5 @@ jobs:
           chmod 400 private_key
           ssh -oStrictHostKeyChecking=no -i private_key $USER@$HOST "rm -rf nextjs_awsdeploy/.next"  
           scp -oStrictHostKeyChecking=no -i private_key -r .next $USER@$HOST:nextjs_awsdeploy/.next
-          ssh -oStrictHostKeyChecking=no -i private_key $USER@$HOST "cd nextjs_awsdeploy; pm2 restart app"  
+          ssh -oStrictHostKeyChecking=no -i private_key $USER@$HOST "cd nextjs_awsdeploy; pm2 restart nextjs-apps"  
           rm -f private_key
